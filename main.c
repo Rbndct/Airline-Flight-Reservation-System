@@ -7,25 +7,30 @@
 #define FLIGHTS 3                  // Total number of flights
 
 // Function Prototypes
+// User Interface & Interaction Functions
 void login();
 void viewFlightSchedules(int seats[], int seats2[], int seats3[], int totalSeats);
-void initializeSeats(int flightSeats[], int size);
-int countAvailableSeats(int seats[], int totalSeats);
 void displaySeats(int seats[]);
-void processPayment(int price);
-float applyDiscount(float totalPrice);
-void transactionSummary(float totalSpent);
-void reserveTicket(int flightSeats101[], int flightSeats202[], int flightSeats303[], int prices[]);
-int getFlightNumber();
 void displayAvailableSeats(int flightNumber, int flightSeats101[], int flightSeats202[],
                            int flightSeats303[]);
+void transactionSummary(float totalSpent);
+
+// Reservation & Seat Management Functions
+void initializeSeats(int flightSeats[], int size);
+int countAvailableSeats(int seats[], int totalSeats);
+int getFlightNumber();
 int getSeatSelection(int *row, int *col);
 int isSeatAvailable(int flightNumber, int row, int col, int flightSeats101[], int flightSeats202[],
                     int flightSeats303[]);
-float calculatePrice(int flightNumber, int prices[]);
-int confirmPurchase();
+void reserveTicket(int flightSeats101[], int flightSeats202[], int flightSeats303[], int prices[]);
 void processSeatReservation(int flightNumber, int row, int col, int flightSeats101[],
                             int flightSeats202[], int flightSeats303[]);
+
+// Payment & Pricing Functions
+float calculatePrice(int flightNumber, int prices[]);
+void processPayment(int price);
+float applyDiscount(float totalPrice);
+int confirmPurchase();
 
 /**
  * Handles user login before accessing the system.
@@ -134,13 +139,23 @@ void displaySeats(int seats[])
         for (int j = 0; j < COLS; j++)
         {
             int index = (i * COLS) + j;
-            // Display X for taken seats and O for available seats
-            printf("%c ", seats[index] ? 'X' : 'O');
-            if (j == 2) printf("  ");
+
+            char seatSymbol = 'O';  // Default to available seat
+            if (seats[index] == 1)
+            {
+                seatSymbol = 'X';  // Mark as taken seat
+            }
+
+            printf("%c ", seatSymbol);
+            if (j == 2)
+            {
+                printf("  ");
+            }
         }
         printf("\n");
     }
 }
+
 /**
  * Handles payment by prompting the user to enter payment amounts
  * until the total amount paid meets or exceeds the ticket price. If the payment
@@ -291,7 +306,14 @@ void reserveTicket(int flightSeats101[], int flightSeats202[], int flightSeats30
                     }
                     else
                     {
-                        col = (colChar >= 'A' && colChar <= 'F') ? colChar - 'A' : colChar - 'a';
+                        if (colChar >= 'A' && colChar <= 'F')
+                        {
+                            col = colChar - 'A';
+                        }
+                        else if (colChar >= 'a' && colChar <= 'f')
+                        {
+                            col = colChar - 'a';
+                        }
 
                         if (isSeatAvailable(flightNumber, row, col, flightSeats101, flightSeats202,
                                             flightSeats303))
@@ -395,13 +417,16 @@ int isSeatAvailable(int flightNumber, int row, int col, int flightSeats101[], in
                     int flightSeats303[])
 {
     int seatIndex = ((row - 1) * COLS) + col;
+    int available = 1;  // Assume the seat is available
+
     if ((flightNumber == 101 && flightSeats101[seatIndex] == 1) ||
         (flightNumber == 202 && flightSeats202[seatIndex] == 1) ||
         (flightNumber == 303 && flightSeats303[seatIndex] == 1))
     {
-        return 0;
+        available = 0;  // Mark as unavailable
     }
-    return 1;
+
+    return available;
 }
 
 /**
@@ -409,7 +434,22 @@ int isSeatAvailable(int flightNumber, int row, int col, int flightSeats101[], in
  */
 float calculatePrice(int flightNumber, int prices[])
 {
-    return (flightNumber == 101) ? prices[0] : (flightNumber == 202) ? prices[1] : prices[2];
+    float price;
+
+    if (flightNumber == 101)
+    {
+        price = prices[0];
+    }
+    else if (flightNumber == 202)
+    {
+        price = prices[1];
+    }
+    else
+    {
+        price = prices[2];
+    }
+
+    return price;
 }
 
 /**
@@ -418,12 +458,15 @@ float calculatePrice(int flightNumber, int prices[])
 int confirmPurchase()
 {
     char confirm;
+    int isConfirmed = 0;  // Assume the purchase is not confirmed
+
     printf("Confirm purchase? (Y/N): ");
-    if (scanf(" %c", &confirm) != 1 || (confirm != 'Y' && confirm != 'y'))
+    if (scanf(" %c", &confirm) == 1 && (confirm == 'Y' || confirm == 'y'))
     {
-        return 0;
+        isConfirmed = 1;  // Mark as confirmed
     }
-    return 1;
+
+    return isConfirmed;
 }
 
 /**
@@ -459,29 +502,26 @@ int main()
     login();
 
     int exitFlag = 0;
-    while (exitFlag == 0)
+    while (!exitFlag)
     {
         int choice;
-        printf(
-            "\n1. View Flight Schedules\n2. Reserve Ticket\n3. Exit\nEnter "
-            "choice: ");
+        printf("\n1. View Flight Schedules\n2. Reserve Ticket\n3. Exit\nEnter choice: ");
         scanf("%d", &choice);
 
-        if (choice == 1)
+        switch (choice)
         {
-            viewFlightSchedules(flightSeats101, flightSeats202, flightSeats303, TOTAL_SEATS);
-        }
-        else if (choice == 2)
-        {
-            reserveTicket(flightSeats101, flightSeats202, flightSeats303, prices);
-        }
-        else if (choice == 3)
-        {
-            exitFlag = 1;
-        }
-        else
-        {
-            printf("\nInvalid choice. Try again.\n");
+            case 1:
+                viewFlightSchedules(flightSeats101, flightSeats202, flightSeats303, TOTAL_SEATS);
+                break;
+            case 2:
+                reserveTicket(flightSeats101, flightSeats202, flightSeats303, prices);
+                break;
+            case 3:
+                exitFlag = 1;
+                break;
+            default:
+                printf("\nInvalid choice. Try again.\n");
+                break;
         }
     }
 
